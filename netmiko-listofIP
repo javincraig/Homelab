@@ -1,0 +1,50 @@
+from netmiko import ConnectHandler
+
+#---------------Gather information---------------------
+#credentials gathering
+username = input('What is the username? [javin]: ') or 'javin'
+password = input('What is the password? [Cisco]: ') or 'Cisco'
+
+
+#Build Switch list by IP address
+switch_list = []
+item = '1'
+while len(item) > 0:
+    item = input('What is the management IP? {enter to exit)')
+    if len(item) > 0:
+        switch_list.append(item)
+num = 0
+for item in switch_list:
+    print(str(num) + ' : ' + item)
+    num = num + 1
+correct = input('Are these correct?(y/n): ').upper()
+if correct == 'N':
+    bad_one = input('Please enter the number that should be changed: ')
+    del switch_list[int(bad_one)]
+    item = '1'
+    while len(item) > 0:
+        item = input('What is the management IP? {enter to exit)')
+        if len(item) > 0:
+            switch_list.append(item)
+    num = 0
+    for item in switch_list:
+        print(str(num) + ' : ' + item)
+        num = num + 1
+    correct = input('Are these correct?(y/n): ').upper()
+
+
+#Logs into every device in switch list to perform action
+for device in switch_list:
+    cisco_switch = {
+    'device_type': 'cisco_ios',
+    'ip': device,
+    'username': username,
+    'password': password}
+    print(cisco_switch)
+    connection = ConnectHandler(**cisco_switch)
+    hostname_output = connection.send_command('show run | include hostname')
+    access_list_output = connection.send_command('show ip access-list')
+    print('--------------------------------------------')
+    print(hostname_output)
+    for line in access_list_output.splitlines():
+        print(line)
