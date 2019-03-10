@@ -20,6 +20,7 @@ while more in yesans:
     vlan_gateway = input('What is the default gateway for vlan ' + str(vlan) + '?: ')
     networks[vlan] = vlan
     networks[vlan] = {}
+    networks[vlan]['vlanid'] = vlan
     networks[vlan]['vlanname'] = vlan_name
     networks[vlan]['vlannetwork'] = vlan_network
     networks[vlan]['vlanmask'] = vlan_mask
@@ -42,6 +43,7 @@ if managementvlan not in networks:
     vlan_gateway = input('What is the default gateway for vlan ' + str(vlan) + '?: ')
     networks[vlan] = vlan
     networks[vlan] = {}
+    networks[vlan]['vlanid'] = vlan
     networks[vlan]['vlanname'] = vlan_name
     networks[vlan]['vlannetwork'] = vlan_network
     networks[vlan]['vlanmask'] = vlan_mask
@@ -51,12 +53,25 @@ switchhostname = input('What is the hostname for the switch?: ')
 enable_secret = input('What is the enable secret password?[cisco]: ') or 'cisco'
 user = input('What username would you like to create?[cisco]: ') or 'cisco'
 user_password = input('What is the password?[cisco]: ') or 'cisco'
+def esxi_conf(networks):
+    esxi_switch_name = input('What is the virtual switch name? [LAN]: ') or 'LAN'
+    vmnic = input('what is the virtual switch uplink? [vmnic1]: ').lower() or 'vmnic1'
+    print('')
+    print('-------------------------ESXI CLI Cconfiguration---------------------------------')
+    print('esxcli network vswitch standard add --vswitch-name=' + esxi_switch_name)
+    print('esxcli network vswitch standard set --cdp-status=both --vswitch-name=' + esxi_switch_name)
+    print('esxcli network vswitch standard uplink add --uplink-name=' + vmnic + ' --vswitch-name='+ esxi_switch_name)
+    # Portgroup list
+    for net in networks:
+        print('esxcli network vswitch standard portgroup add --portgroup-name=' + networks[net]['vlanname'] + ' --vswitch-name=' + esxi_switch_name)
+        print('esxcli network vswitch standard portgroup set -p ' + networks[net]['vlanname'] + ' --vlan-id ' + networks[net]['vlanid'])
 
-# Print configuration
-print('Copy and paste the following on to your switch from the console port')
-print('')
-print('vtp domain ' + switchhostname)
-print('''
+def cisco_switch_conf(networks):
+    print('')
+    print('Copy and paste the following on to your switch from the console port')
+    print('')
+    print('vtp domain ' + switchhostname)
+    print('''
 vtp mode transparent
 spanning-tree mode rapid-pvst
 spanning-tree portfast default
@@ -68,14 +83,18 @@ login local
 crypto keygen gen rsa mod 2048
 ssh version 2
 ''')
-print('enable secret ' + enable_secret)
-print('user ' + user + ' priv 15 secret ' + user_password)
-print('')
-for net in networks:
-    print('vlan ' + net)
-    print('  name ' + networks[net]['vlanname'])
-print('interface vlan ' + managementvlan)
-print('  ip address ' + managementip + ' ' + networks[managementvlan]['vlanmask'])
-print('  no shut')
-print('exit')
-print('ip default gateway ' + networks[managementvlan]['vlangateway'])
+    print('enable secret ' + enable_secret)
+    print('user ' + user + ' priv 15 secret ' + user_password)
+    print('')
+    for net in networks:
+        print('vlan ' + net)
+        print('  name ' + networks[net]['vlanname'])
+    print('interface vlan ' + managementvlan)
+    print('  ip address ' + managementip + ' ' + networks[managementvlan]['vlanmask'])
+    print('  no shut')
+    print('exit')
+    print('ip default gateway ' + networks[managementvlan]['vlangateway'])
+
+# Trigger the above definition
+cisco_switch_conf(networks)
+esxi_conf(networks)
