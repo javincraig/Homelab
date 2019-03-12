@@ -1,5 +1,6 @@
 from netmiko import ConnectHandler
-
+from getpass import getpass
+password = getpass(prompt='Password: ', stream=None)
 #---------------Gather information---------------------
 #credentials gathering
 username = input('What is the username? [javin]: ') or 'javin'
