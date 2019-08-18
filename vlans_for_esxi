@@ -1,0 +1,25 @@
+#num_phy_int = input('How many physical interfaces?: ')
+num_vswitch = input('How many vSwitches?: ')
+vswitch_names = []
+
+while int(num_vswitch) > 0:
+    vswitch_names.append(input('Please enter the name of a vSwitch: '))
+    num_vswitch = int(num_vswitch) - 1
+
+vmnic = 1
+
+for name in vswitch_names:
+    print('esxcli network vswitch standard add --vswitch-name=' + name)
+    print('esxcli network vswitch standard set --cdp-status=both --vswitch-name=' + name)
+    print('esxcli network vswitch standard uplink add --uplink-name=vmnic' + str(vmnic) + ' --vswitch-name=' + name)
+    vmnic = vmnic + 1
+
+for name in vswitch_names:
+    num_vlans = input('How many VLANs do you need for vSwitch ' + name + '?: ')
+    while int(num_vlans) > 0:
+        portgroup_name = input('What is the portgroup name?: ')
+        portgroup_vlan = input('What is the VLAN for ' + portgroup_name + ' on vSwitch '+ name + ': ')
+        print('esxcli network vswitch standard portgroup add --portgroup-name=' + portgroup_name + ' --vswitch-name=' + name)
+        print('esxcli network vswitch standard portgroup set -p '+ portgroup_name + ' --vlan-id ' + portgroup_vlan)
+        num_vlans = int(num_vlans) - 1
+
